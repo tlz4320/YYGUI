@@ -6,7 +6,9 @@
 /*.egg-info/
 
 *.py[cdo]
-
+/tests/
+/bin/
+/lib/
 .DS_Store
 /Scripts
 /Lib

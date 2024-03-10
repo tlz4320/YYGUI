@@ -2,12 +2,36 @@ auto_save: false
 display_label_popup: true
 store_data: true
 keep_prev: false
+keep_prev_scale: false
+keep_prev_brightness: false
+keep_prev_contrast: false
+logger_level: info
 
 flags: null
+label_flags: null
 labels: null
 file_search: null
 sort_labels: true
 validate_label: null
+
+default_shape_color: [0, 255, 0]
+shape_color: auto  # null, 'auto', 'manual'
+shift_auto_shape_color: 0
+label_colors: null
+
+shape:
+  # drawing
+  line_color: [0, 255, 0, 128]
+  fill_color: [0, 0, 0, 64]
+  vertex_fill_color: [0, 255, 0, 255]
+  # selecting / hovering
+  select_line_color: [255, 255, 255, 255]
+  select_fill_color: [0, 255, 0, 64]
+  hvertex_fill_color: [255, 255, 255, 255]
+  point_size: 8
+
+ai:
+  default: 'EfficientSam (accuracy)'
 
 # main
 flag_dock:
@@ -38,7 +62,25 @@ fit_to_content:
   column: true
   row: false
 
-epsilon: 11.0
+# canvas
+epsilon: 10.0
+canvas:
+  fill_drawing: true
+  # None: do nothing
+  # close: close polygon
+  double_click: close
+  # The max number of edits we can undo
+  num_backups: 10
+  # show crosshair
+  crosshair:
+    polygon: false
+    rectangle: true
+    circle: false
+    line: false
+    point: false
+    linestrip: false
+    ai_polygon: false
+    ai_mask: false
 
 shortcuts:
   close: Ctrl+W
@@ -48,6 +90,7 @@ shortcuts:
   save: Ctrl+S
   save_as: Ctrl+Shift+S
   save_to: null
+  delete_file: Ctrl+Delete
 
   open_next: [D, Ctrl+Shift+D]
   open_prev: [A, Ctrl+Shift+A]
@@ -58,7 +101,6 @@ shortcuts:
   fit_window: Ctrl+F
   fit_width: Ctrl+Shift+F
 
-  add_point: Ctrl+Shift+P
   create_polygon: Ctrl+N
   create_rectangle: Ctrl+R
   create_circle: null
@@ -68,9 +110,15 @@ shortcuts:
   edit_polygon: Ctrl+J
   delete_polygon: Delete
   duplicate_polygon: Ctrl+D
+  copy_polygon: Ctrl+C
+  paste_polygon: Ctrl+V
   undo: Ctrl+Z
-  undo_last_point: [Ctrl+Z, Backspace]
+  undo_last_point: Ctrl+Z
+  add_point_to_edge: Ctrl+Shift+P
   edit_label: Ctrl+E
-  edit_line_color: Ctrl+L
-  edit_fill_color: Ctrl+Shift+L
   toggle_keep_prev_mode: Ctrl+P
+  remove_selected_point: [Meta+H, Backspace]
+
+  show_all_polygons: null
+  hide_all_polygons: null
+  toggle_all_polygons: T

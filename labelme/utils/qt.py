@@ -1,19 +1,17 @@
-from math import sqrt
 import os.path as osp
+from math import sqrt
 
 import numpy as np
-
 from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
-
 
 here = osp.dirname(osp.abspath(__file__))
 
 
 def newIcon(icon):
-    icons_dir = osp.join(here, '../icons')
-    return QtGui.QIcon(osp.join(':/', icons_dir, '%s.png' % icon))
+    icons_dir = osp.join(here, "../icons")
+    return QtGui.QIcon(osp.join(":/", icons_dir, "%s.png" % icon))
 
 
 def newButton(text, icon=None, slot=None):
@@ -25,12 +23,21 @@ def newButton(text, icon=None, slot=None):
     return b
 
 
-def newAction(parent, text, slot=None, shortcut=None, icon=None,
-              tip=None, checkable=False, enabled=True):
+def newAction(
+    parent,
+    text,
+    slot=None,
+    shortcut=None,
+    icon=None,
+    tip=None,
+    checkable=False,
+    enabled=True,
+    checked=False,
+):
     """Create a new action and assign callbacks, shortcuts, etc."""
     a = QtWidgets.QAction(text, parent)
     if icon is not None:
-        a.setIconText(text.replace(' ', '\n'))
+        a.setIconText(text.replace(" ", "\n"))
         a.setIcon(newIcon(icon))
     if shortcut is not None:
         if isinstance(shortcut, (list, tuple)):
@@ -45,6 +52,7 @@ def newAction(parent, text, slot=None, shortcut=None, icon=None,
     if checkable:
         a.setCheckable(True)
     a.setEnabled(enabled)
+    a.setChecked(checked)
     return a
 
 
@@ -59,7 +67,7 @@ def addActions(widget, actions):
 
 
 def labelValidator():
-    return QtGui.QRegExpValidator(QtCore.QRegExp(r'^[^ \t].+'), None)
+    return QtGui.QRegExpValidator(QtCore.QRegExp(r"^[^ \t].+"), None)
 
 
 class struct(object):
@@ -80,9 +88,11 @@ def distancetoline(point, line):
         return np.linalg.norm(p3 - p1)
     if np.dot((p3 - p2), (p1 - p2)) < 0:
         return np.linalg.norm(p3 - p2)
+    if np.linalg.norm(p2 - p1) == 0:
+        return np.linalg.norm(p3 - p1)
     return np.linalg.norm(np.cross(p2 - p1, p1 - p3)) / np.linalg.norm(p2 - p1)
 
 
 def fmtShortcut(text):
-    mod, key = text.split('+', 1)
-    return '<b>%s</b>+<b>%s</b>' % (mod, key)
+    mod, key = text.split("+", 1)
+    return "<b>%s</b>+<b>%s</b>" % (mod, key)
