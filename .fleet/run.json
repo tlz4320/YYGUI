@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        
+        {
+            "name": "__main__",
+            "type": "python",
+            "workingDir": "E:\\python_project\\labelme\\Lib\\site-packages\\labelme",
+            "environment": {
+                "PYTHONUNBUFFERED": "1",
+                "PYTHONPATH": "E:\\python_project\\labelme"
+            },
+            "file": "E:\\python_project\\labelme\\Lib\\site-packages\\labelme\\__main__.py"
+        }
+    ]
+}

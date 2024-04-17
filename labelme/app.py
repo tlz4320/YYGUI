@@ -8,8 +8,10 @@ import os.path as osp
 import re
 import webbrowser
 
+import cv2
 import imgviz
 import natsort
+from PIL import Image
 from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
@@ -32,7 +34,7 @@ from labelme.widgets import LabelListWidgetItem
 from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
-
+from .MvImport.CameraOp import open_device
 from . import utils
 
 # FIXME
@@ -212,9 +214,16 @@ class MainWindow(QtWidgets.QMainWindow):
             "quit",
             self.tr("Quit application"),
         )
-        open_ = action(
+        openDevice_ = action(
             self.tr("&Open\n"),
             self.openFile,
+            shortcuts["open"],
+            "Connect",
+            self.tr("Open Device"),
+        )
+        open_ = action(
+            self.tr("&Open\n"),
+            self.openDevice,
             shortcuts["open"],
             "open",
             self.tr("Open image or label file"),
@@ -717,6 +726,7 @@ class MainWindow(QtWidgets.QMainWindow):
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             labelList=labelMenu,
         )
+        # 修改open的操作
 
         utils.addActions(
             self.menus.file,
@@ -814,7 +824,7 @@ class MainWindow(QtWidgets.QMainWindow):
             save,
             deleteFile,
             None,
-            createMode,
+            createRectangleMode,
             editMode,
             duplicate,
             delete,
@@ -1514,6 +1524,73 @@ class MainWindow(QtWidgets.QMainWindow):
             if value is None:
                 flag = item.checkState() == Qt.Unchecked
             item.setCheckState(Qt.Checked if flag else Qt.Unchecked)
+    def loadBuffer(self, data, info):
+        image = QtGui.QImage(data, info.nWidth, info.nHeight, QtGui.QImage.Format_RGB888)
+
+        if image.isNull():
+            formats = [
+                "*.{}".format(fmt.data().decode())
+                for fmt in QtGui.QImageReader.supportedImageFormats()
+            ]
+            self.errorMessage(
+                self.tr("Error opening file"),
+                self.tr(
+                    "<p>Make sure <i>{0}</i> is a valid image file.<br/>"
+                    "Supported image formats: {1}</p>"
+                ).format("Camera", ",".join(formats)),
+            )
+            self.status(self.tr("Error reading %s") % "Camera")
+            return False
+        self.image = image
+        self.filename = "Camera"
+        if self._config["keep_prev"]:
+            prev_shapes = self.canvas.shapes
+        self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
+        flags = {k: False for k in self._config["flags"] or []}
+        self.canvas.setEnabled(True)
+        # set zoom values
+        is_initial_load = not self.zoom_values
+        if self.filename in self.zoom_values:
+            self.zoomMode = self.zoom_values[self.filename][0]
+            self.setZoom(self.zoom_values[self.filename][1])
+        elif is_initial_load or not self._config["keep_prev_scale"]:
+            self.adjustScale(initial=True)
+        # set scroll values
+        for orientation in self.scroll_values:
+            if self.filename in self.scroll_values[orientation]:
+                self.setScroll(
+                    orientation, self.scroll_values[orientation][self.filename]
+                )
+        # set brightness contrast values
+        dialog = BrightnessContrastDialog(
+            Image.fromarray(cv2.cvtColor(data, cv2.COLOR_BGR2RGB)),
+            self.onNewBrightnessContrast,
+            parent=self,
+        )
+        brightness, contrast = self.brightnessContrast_values.get(
+            self.filename, (None, None)
+        )
+        if self._config["keep_prev_brightness"] and self.recentFiles:
+            brightness, _ = self.brightnessContrast_values.get(
+                self.recentFiles[0], (None, None)
+            )
+        if self._config["keep_prev_contrast"] and self.recentFiles:
+            _, contrast = self.brightnessContrast_values.get(
+                self.recentFiles[0], (None, None)
+            )
+        if brightness is not None:
+            dialog.slider_brightness.setValue(brightness)
+        if contrast is not None:
+            dialog.slider_contrast.setValue(contrast)
+        self.brightnessContrast_values[self.filename] = (brightness, contrast)
+        if brightness is not None or contrast is not None:
+            dialog.onNewValue(None)
+        self.paintCanvas()
+        self.addRecentFile(self.filename)
+        self.toggleActions(True)
+        self.canvas.setFocus()
+        self.status(str(self.tr("Loaded %s")) % osp.basename(str("Camera")))
+        return True
 
     def loadFile(self, filename=None):
         """Load the specified file, or the last opened file if None."""
@@ -1774,6 +1851,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(self.filename)
 
         self._config["keep_prev"] = keep_prev
+
+    def openDevice(self):
+        open_device(self)
+
+
 
     def openFile(self, _value=False):
         if not self.mayContinue():
