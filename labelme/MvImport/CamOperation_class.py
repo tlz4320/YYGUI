@@ -1,22 +1,13 @@
 # -- coding: utf-8 --
-import sys
+import inspect
+import random
 import threading
-import msvcrt
+import time
 
 import cv2
 import numpy as np
-import time
-import sys, os
-import datetime
-import inspect
-import ctypes
-import random
-from ctypes import *
 
-
-from .CameraParams_header import *
 from .MvCameraControl_class import *
-from PyQt5 import QtGui
 
 
 # 强制关闭线程
