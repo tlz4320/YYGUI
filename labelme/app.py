@@ -35,6 +35,10 @@ from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
 from .MvImport.CameraOp import open_device
+from .MvImport.CameraOp import changeParam
+from .MvImport.CameraOp import save_image
+from .MvImport.CameraOp import startGrab
+from .MvImport.CameraOp import stopGrab
 from . import utils
 
 # FIXME
@@ -67,7 +71,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if config is None:
             config = get_config()
         self._config = config
-
+        self.opened = False
         # set default shape colors
         Shape.line_color = QtGui.QColor(*self._config["shape"]["line_color"])
         Shape.fill_color = QtGui.QColor(*self._config["shape"]["fill_color"])
@@ -214,29 +218,23 @@ class MainWindow(QtWidgets.QMainWindow):
             "quit",
             self.tr("Quit application"),
         )
-        openDevice_ = action(
-            self.tr("&Open\n"),
-            self.openFile,
-            shortcuts["open"],
-            "Connect",
-            self.tr("Open Device"),
-        )
+
         open_ = action(
-            self.tr("&Open\n"),
+            "Read",
             self.openDevice,
             shortcuts["open"],
             "open",
             self.tr("Open image or label file"),
         )
         opendir = action(
-            self.tr("Open Dir"),
-            self.openDirDialog,
+            "Take Photo",
+            self.saveCamera,
             shortcuts["open_dir"],
             "open",
             self.tr("Open Dir"),
         )
         openNextImg = action(
-            self.tr("&Next Image"),
+            "Next Camera",
             self.openNextImg,
             shortcuts["open_next"],
             "next",
@@ -244,7 +242,7 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
         openPrevImg = action(
-            self.tr("&Prev Image"),
+            "Prev Camera",
             self.openPrevImg,
             shortcuts["open_prev"],
             "prev",
@@ -1524,73 +1522,17 @@ class MainWindow(QtWidgets.QMainWindow):
             if value is None:
                 flag = item.checkState() == Qt.Unchecked
             item.setCheckState(Qt.Checked if flag else Qt.Unchecked)
-    def loadBuffer(self, data, info):
-        image = QtGui.QImage(data, info.nWidth, info.nHeight, QtGui.QImage.Format_RGB888)
-
-        if image.isNull():
-            formats = [
-                "*.{}".format(fmt.data().decode())
-                for fmt in QtGui.QImageReader.supportedImageFormats()
-            ]
-            self.errorMessage(
-                self.tr("Error opening file"),
-                self.tr(
-                    "<p>Make sure <i>{0}</i> is a valid image file.<br/>"
-                    "Supported image formats: {1}</p>"
-                ).format("Camera", ",".join(formats)),
-            )
-            self.status(self.tr("Error reading %s") % "Camera")
-            return False
-        self.image = image
+    def startAction(self):
         self.filename = "Camera"
-        if self._config["keep_prev"]:
-            prev_shapes = self.canvas.shapes
-        self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
-        flags = {k: False for k in self._config["flags"] or []}
         self.canvas.setEnabled(True)
-        # set zoom values
-        is_initial_load = not self.zoom_values
-        if self.filename in self.zoom_values:
-            self.zoomMode = self.zoom_values[self.filename][0]
-            self.setZoom(self.zoom_values[self.filename][1])
-        elif is_initial_load or not self._config["keep_prev_scale"]:
-            self.adjustScale(initial=True)
-        # set scroll values
-        for orientation in self.scroll_values:
-            if self.filename in self.scroll_values[orientation]:
-                self.setScroll(
-                    orientation, self.scroll_values[orientation][self.filename]
-                )
-        # set brightness contrast values
-        dialog = BrightnessContrastDialog(
-            Image.fromarray(cv2.cvtColor(data, cv2.COLOR_BGR2RGB)),
-            self.onNewBrightnessContrast,
-            parent=self,
-        )
-        brightness, contrast = self.brightnessContrast_values.get(
-            self.filename, (None, None)
-        )
-        if self._config["keep_prev_brightness"] and self.recentFiles:
-            brightness, _ = self.brightnessContrast_values.get(
-                self.recentFiles[0], (None, None)
-            )
-        if self._config["keep_prev_contrast"] and self.recentFiles:
-            _, contrast = self.brightnessContrast_values.get(
-                self.recentFiles[0], (None, None)
-            )
-        if brightness is not None:
-            dialog.slider_brightness.setValue(brightness)
-        if contrast is not None:
-            dialog.slider_contrast.setValue(contrast)
-        self.brightnessContrast_values[self.filename] = (brightness, contrast)
-        if brightness is not None or contrast is not None:
-            dialog.onNewValue(None)
-        self.paintCanvas()
         self.addRecentFile(self.filename)
         self.toggleActions(True)
         self.canvas.setFocus()
         self.status(str(self.tr("Loaded %s")) % osp.basename(str("Camera")))
         return True
+
+    def stopAction(self):
+        self.toggleActions(False)
 
     def loadFile(self, filename=None):
         """Load the specified file, or the last opened file if None."""
@@ -1851,11 +1793,24 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(self.filename)
 
         self._config["keep_prev"] = keep_prev
+#tobin
 
     def openDevice(self):
-        open_device(self)
+        if ~self.opened:
+            open_device(self)
+            changeParam()
+            startGrab(self)
+        self.opened = True
+        self.stopAction()
 
+    def setParam(self):
+        changeParam()
 
+    def saveCamera(self):
+        if self.opened:
+            save_image("filename")
+            stopGrab()
+            self.loadFile("d://filename.jpg")
 
     def openFile(self, _value=False):
         if not self.mayContinue():

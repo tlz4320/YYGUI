@@ -118,4 +118,13 @@ def open_device(mainWindow):
             QMessageBox.warning(mainWindow, "Error", strError, QMessageBox.Ok)
         isOpen = True
 
-    ret = obj_cam_operation.Start_grabbing(mainWindow)
+def startGrab(mainWindow):
+        ret = obj_cam_operation.Start_grabbing(mainWindow)
+def changeParam():
+    obj_cam_operation.Set_parameter(2, 500000, 10)
+
+def save_image(filename):
+    obj_cam_operation.Save_jpg(filename)
+
+def stopGrab():
+    obj_cam_operation.Stop_grabbing()

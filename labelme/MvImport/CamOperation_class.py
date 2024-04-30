@@ -189,7 +189,7 @@ class CameraOperation:
             print("start grabbing successfully!")
             try:
                 thread_id = random.randint(1, 10000)
-                self.h_thread_handle = threading.Thread(target=CameraOperation.Work_thread, args=(self, mainWindow))
+                self.h_thread_handle = threading.Thread(target=CameraOperation.Work_thread, args=(self, mainWindow.canvas.winId()))
                 self.h_thread_handle.start()
                 self.b_thread_closed = True
             finally:
@@ -313,7 +313,7 @@ class CameraOperation:
             return MV_OK
 
     # 取图线程函数
-    def Work_thread(self, mainWindow):
+    def Work_thread(self, winHandle):
         stOutFrame = MV_FRAME_OUT()
         memset(byref(stOutFrame), 0, sizeof(stOutFrame))
 
@@ -332,27 +332,22 @@ class CameraOperation:
 
                 print("get one frame: Width[%d], Height[%d], nFrameNum[%d]"
                       % (self.st_frame_info.nWidth, self.st_frame_info.nHeight, self.st_frame_info.nFrameNum))
-                data = np.frombuffer(self.buf_save_image, count=int(self.st_frame_info.nWidth * self.st_frame_info.nHeight), dtype=np.uint8)
-                image = data.reshape(self.st_frame_info.nHeight, self.st_frame_info.nWidth)
-                image = cv2.cvtColor(image, cv2.COLOR_BAYER_BG2BGR)
                 # 释放缓存
                 self.obj_cam.MV_CC_FreeImageBuffer(stOutFrame)
             else:
                 print("no data, ret = " + To_hex_str(ret))
                 continue
 
-            mainWindow.loadBuffer(image, self.st_frame_info)
-            
             # 使用Display接口显示图像
-            # stDisplayParam = MV_DISPLAY_FRAME_INFO()
-            # memset(byref(stDisplayParam), 0, sizeof(stDisplayParam))
-            # stDisplayParam.hWnd = int(winHandle)
-            # stDisplayParam.nWidth = self.st_frame_info.nWidth
-            # stDisplayParam.nHeight = self.st_frame_info.nHeight
-            # stDisplayParam.enPixelType = self.st_frame_info.enPixelType
-            # stDisplayParam.pData = self.buf_save_image
-            # stDisplayParam.nDataLen = self.st_frame_info.nFrameLen
-            # self.obj_cam.MV_CC_DisplayOneFrame(stDisplayParam)
+            stDisplayParam = MV_DISPLAY_FRAME_INFO()
+            memset(byref(stDisplayParam), 0, sizeof(stDisplayParam))
+            stDisplayParam.hWnd = int(winHandle)
+            stDisplayParam.nWidth = self.st_frame_info.nWidth
+            stDisplayParam.nHeight = self.st_frame_info.nHeight
+            stDisplayParam.enPixelType = self.st_frame_info.enPixelType
+            stDisplayParam.pData = self.buf_save_image
+            stDisplayParam.nDataLen = self.st_frame_info.nFrameLen
+            self.obj_cam.MV_CC_DisplayOneFrame(stDisplayParam)
 
             # 是否退出
             if self.b_exit:
@@ -361,15 +356,16 @@ class CameraOperation:
                 break
 
     # 存jpg图像
-    def Save_jpg(self):
+    def Save_jpg(self, filename):
 
         if self.buf_save_image is None:
+            print("error")
             return
 
         # 获取缓存锁
         self.buf_lock.acquire()
 
-        file_path = str(self.st_frame_info.nFrameNum) + ".jpg"
+        file_path = "d://" + filename + ".jpg"
         c_file_path = file_path.encode('ascii')
         stSaveParam = MV_SAVE_IMAGE_TO_FILE_PARAM_EX()
         stSaveParam.enPixelType = self.st_frame_info.enPixelType  # ch:相机对应的像素格式 | en:Camera pixel type
