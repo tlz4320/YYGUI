@@ -39,6 +39,7 @@ from .MvImport.CameraOp import changeParam
 from .MvImport.CameraOp import save_image
 from .MvImport.CameraOp import startGrab
 from .MvImport.CameraOp import stopGrab
+from .MvImport.CameraOp import *
 from . import utils
 
 # FIXME
@@ -235,19 +236,19 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         openNextImg = action(
             "Next Camera",
-            self.openNextImg,
+            self.openNextCam,
             shortcuts["open_next"],
             "next",
             self.tr("Open next (hold Ctl+Shift to copy labels)"),
-            enabled=False,
+            enabled=True,
         )
         openPrevImg = action(
             "Prev Camera",
-            self.openPrevImg,
+            self.openPrevCam,
             shortcuts["open_prev"],
             "prev",
             self.tr("Open prev (hold Ctl+Shift to copy labels)"),
-            enabled=False,
+            enabled=True,
         )
         save = action(
             self.tr("&Save\n"),
@@ -1765,6 +1766,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._config["keep_prev"] = keep_prev
 
+
+
+
     def openNextImg(self, _value=False, load=True):
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
@@ -1794,14 +1798,31 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._config["keep_prev"] = keep_prev
 #tobin
-
-    def openDevice(self):
-        if ~self.opened:
-            open_device(self)
-            changeParam()
+    nCams = 0
+    nSelCam = 0
+    def openNextCam(self):
+        nSelCam = changeDevice(self, 1)
+        if(self.grabbing):
             startGrab(self)
+        else:
+            self.loadFile("d://filename.jpg")
+
+    def openPrevCam(self):
+        nSelCam = changeDevice(self, -1)
+        if(self.grabbing):
+            startGrab(self)
+        else:
+            self.loadFile("d://filename.jpg")
+
+    grabbing = True
+    def openDevice(self):
+        if not self.opened:
+            self.nCams = open_device(self)
+            #changeParam()
         self.opened = True
         self.stopAction()
+        startGrab(self)
+        self.grabbing = True
 
     def setParam(self):
         changeParam()
@@ -1810,6 +1831,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.opened:
             save_image("filename")
             stopGrab()
+            self.grabbing = False
             self.loadFile("d://filename.jpg")
 
     def openFile(self, _value=False):

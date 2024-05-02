@@ -11,9 +11,8 @@ deviceList = MV_CC_DEVICE_INFO_LIST()
 cam = MvCamera()
 nSelCamIndex = 0
 obj_cam_operation = 0
-isOpen = False
-isGrabbing = False
-isCalibMode = True
+devideOpt = list()
+
 # 获取选取设备信息的索引，通过[]之间的字符去解析
 def TxtWrapBy(start_str, end, all):
     start = all.find(start_str)
@@ -47,84 +46,53 @@ def enum_devices(mainWindow):
     if ret != 0:
         strError = "Enum devices fail! ret = :" + ToHexStr(ret)
         QMessageBox.warning(mainWindow, "Error", strError, QMessageBox.Ok)
-        return ret
+    print("Find %d devices!" % deviceList.nDeviceNum)
 
-        if deviceList.nDeviceNum == 0:
-            QMessageBox.warning(mainWindow, "Info", "Find no device", QMessageBox.Ok)
-            return ret
-        print("Find %d devices!" % deviceList.nDeviceNum)
-
-        devList = []
-        for i in range(0, deviceList.nDeviceNum):
-            mvcc_dev_info = cast(deviceList.pDeviceInfo[i], POINTER(MV_CC_DEVICE_INFO)).contents
-            if mvcc_dev_info.nTLayerType == MV_GIGE_DEVICE:
-                print("\ngige device: [%d]" % i)
-                user_defined_name = decoding_char(mvcc_dev_info.SpecialInfo.stGigEInfo.chUserDefinedName)
-                model_name = decoding_char(mvcc_dev_info.SpecialInfo.stGigEInfo.chModelName)
-                print("device user define name: " + user_defined_name)
-                print("device model name: " + model_name)
-
-                nip1 = ((mvcc_dev_info.SpecialInfo.stGigEInfo.nCurrentIp & 0xff000000) >> 24)
-                nip2 = ((mvcc_dev_info.SpecialInfo.stGigEInfo.nCurrentIp & 0x00ff0000) >> 16)
-                nip3 = ((mvcc_dev_info.SpecialInfo.stGigEInfo.nCurrentIp & 0x0000ff00) >> 8)
-                nip4 = (mvcc_dev_info.SpecialInfo.stGigEInfo.nCurrentIp & 0x000000ff)
-                print("current ip: %d.%d.%d.%d " % (nip1, nip2, nip3, nip4))
-                devList.append(
-                    "[" + str(i) + "]GigE: " + user_defined_name + " " + model_name + "(" + str(nip1) + "." + str(
-                        nip2) + "." + str(nip3) + "." + str(nip4) + ")")
-            elif mvcc_dev_info.nTLayerType == MV_USB_DEVICE:
-                print("\nu3v device: [%d]" % i)
-                user_defined_name = decoding_char(mvcc_dev_info.SpecialInfo.stUsb3VInfo.chUserDefinedName)
-                model_name = decoding_char(mvcc_dev_info.SpecialInfo.stUsb3VInfo.chModelName)
-                print("device user define name: " + user_defined_name)
-                print("device model name: " + model_name)
-
-                strSerialNumber = ""
-                for per in mvcc_dev_info.SpecialInfo.stUsb3VInfo.chSerialNumber:
-                    if per == 0:
-                        break
-                    strSerialNumber = strSerialNumber + chr(per)
-                print("user serial number: " + strSerialNumber)
-                devList.append("[" + str(i) + "]USB: " + user_defined_name + " " + model_name
-                               + "(" + str(strSerialNumber) + ")")
-                
 def open_device(mainWindow):
     global deviceList
     global nSelCamIndex
     global obj_cam_operation
-    global isOpen
-    global cam
-    global obj_cam_operation
-    global isGrabbing
+    global devideOpt
     enum_devices(mainWindow)
-    cam = MvCamera()
-    if isOpen:
-        QMessageBox.warning(mainWindow, "Error", 'Camera is Running!', QMessageBox.Ok)
-        return MV_E_CALLORDER
-    obj_cam_operation = CameraOperation(cam, deviceList, 0)
-    ret = obj_cam_operation.Open_device()
-    if 0 != ret:
-        strError = "Open device failed ret:" + ToHexStr(ret)
-        QMessageBox.warning(mainWindow, "Error", strError, QMessageBox.Ok)
-        isOpen = False
-    else:
-        ret = obj_cam_operation.Set_trigger_mode(False)
-        if ret != 0:
-            strError = "Set continue mode failed ret:" + ToHexStr(ret) + " mode is  Trigger"
-            QMessageBox.warning(mainWindow, "Error", strError, QMessageBox.Ok)
-        ret = obj_cam_operation.Get_parameter()
-        if ret != MV_OK:
-            strError = "Get param failed ret:" + ToHexStr(ret)
-            QMessageBox.warning(mainWindow, "Error", strError, QMessageBox.Ok)
-        isOpen = True
+
+    for index in range(0, deviceList.nDeviceNum):
+        camera = MvCamera()
+        opt = CameraOperation(camera, deviceList, index)
+        devideOpt.append(opt)
+        opt.Open_device()
+        opt.Set_trigger_mode(False)
+        opt.Get_parameter()
+        opt.Start_grabbing()
+    obj_cam_operation = devideOpt[0]
+    return deviceList.nDeviceNum
+
+def changeDevice(mainWindow, step = 1):
+    global deviceList
+    global nSelCamIndex
+    global obj_cam_operation
+    global cam
+    global devideOpt
+    stopGrab()
+    n = deviceList.nDeviceNum
+    nSelCamIndex = nSelCamIndex + step
+    if(nSelCamIndex < 0):
+        nSelCamIndex = nSelCamIndex + n
+    nSelCamIndex = nSelCamIndex % (n + 1)
+    obj_cam_operation = devideOpt[nSelCamIndex]
+    return nSelCamIndex
+
 
 def startGrab(mainWindow):
-        ret = obj_cam_operation.Start_grabbing(mainWindow)
+    obj_cam_operation.winHandle = mainWindow.canvas.winId()
+
 def changeParam():
     obj_cam_operation.Set_parameter(2, 500000, 10)
 
 def save_image(filename):
-    obj_cam_operation.Save_jpg(filename)
+    global deviceList
+    global devideOpt
+    for index in range(0, deviceList.nDeviceNum):
+        devideOpt[index].Save_jpg(filename)
 
 def stopGrab():
     obj_cam_operation.Stop_grabbing()
