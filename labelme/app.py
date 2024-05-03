@@ -785,10 +785,12 @@ class MainWindow(QtWidgets.QMainWindow):
         cameraSelete.defaultWidget().setLayout(QtWidgets.QVBoxLayout())
 
         #
-        cameraLabel = QtWidgets.QLabel(self.tr("相机选择"))
+        cameraLabel = QtWidgets.QLabel("相机选择")
         cameraLabel.setAlignment(QtCore.Qt.AlignCenter)
         cameraSelete.defaultWidget().layout().addWidget(cameraLabel)
 
+        self._selectCameraComboBox = QtWidgets.QComboBox()
+        cameraSelete.defaultWidget().layout().addWidget(self._selectCameraComboBox)
 
 
 
@@ -828,7 +830,8 @@ class MainWindow(QtWidgets.QMainWindow):
             openPrevImg,
             openNextImg,
             save,
-            deleteFile,
+            cameraSelete,
+            #deleteFile,
             None,
             createRectangleMode,
             editMode,
@@ -1806,7 +1809,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 #tobin
     def closeFun(self):
-        stopGrab()
+        closeGrab()
+        self.close()
 
     nCams = 0
     nSelCam = 0
