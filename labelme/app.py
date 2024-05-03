@@ -7,7 +7,7 @@ import os
 import os.path as osp
 import re
 import webbrowser
-
+import glob
 import cv2
 import imgviz
 import natsort
@@ -34,11 +34,6 @@ from labelme.widgets import LabelListWidgetItem
 from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
-from .MvImport.CameraOp import open_device
-from .MvImport.CameraOp import changeParam
-from .MvImport.CameraOp import save_image
-from .MvImport.CameraOp import startGrab
-from .MvImport.CameraOp import stopGrab
 from .MvImport.CameraOp import *
 from . import utils
 
@@ -214,7 +209,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shortcuts = self._config["shortcuts"]
         quit = action(
             self.tr("&Quit"),
-            self.close,
+            self.closeFun,
             shortcuts["quit"],
             "quit",
             self.tr("Quit application"),
@@ -784,6 +779,18 @@ class MainWindow(QtWidgets.QMainWindow):
                 action("&Move here", self.moveShape),
             ),
         )
+        ###Tobin
+        cameraSelete = QtWidgets.QWidgetAction(self)
+        cameraSelete.setDefaultWidget(QtWidgets.QWidget())
+        cameraSelete.defaultWidget().setLayout(QtWidgets.QVBoxLayout())
+
+        #
+        cameraLabel = QtWidgets.QLabel(self.tr("相机选择"))
+        cameraLabel.setAlignment(QtCore.Qt.AlignCenter)
+        cameraSelete.defaultWidget().layout().addWidget(cameraLabel)
+
+
+
 
         selectAiModel = QtWidgets.QWidgetAction(self)
         selectAiModel.setDefaultWidget(QtWidgets.QWidget())
@@ -1798,24 +1805,34 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._config["keep_prev"] = keep_prev
 #tobin
+    def closeFun(self):
+        stopGrab()
+
     nCams = 0
     nSelCam = 0
+    fileindex = 0
     def openNextCam(self):
-        nSelCam = changeDevice(self, 1)
+        self.nSelCam = changeDevice(self, 1)
         if(self.grabbing):
             startGrab(self)
         else:
-            self.loadFile("d://filename.jpg")
+            self.loadFile("d://" + "Camera" + str(self.nSelCam) +  "//" + str(self.fileindex) +".jpg")
 
     def openPrevCam(self):
-        nSelCam = changeDevice(self, -1)
+        self.nSelCam = changeDevice(self, -1)
         if(self.grabbing):
             startGrab(self)
         else:
-            self.loadFile("d://filename.jpg")
+            self.loadFile("d://" + "Camera" + str(self.nSelCam) +  "//" + str(self.fileindex) +".jpg")
 
     grabbing = True
     def openDevice(self):
+        for file in glob.glob("d://Camera0//*.jpg"):
+            file = os.path.basename(file)
+            file = int(file.removesuffix(".jpg"))
+            if file > self.fileindex:
+                self.fileindex = file
+
         if not self.opened:
             self.nCams = open_device(self)
             #changeParam()
@@ -1829,10 +1846,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def saveCamera(self):
         if self.opened:
-            save_image("filename")
+            self.fileindex = self.fileindex + 1
+            save_image(str(self.fileindex))
             stopGrab()
             self.grabbing = False
-            self.loadFile("d://filename.jpg")
+            self.loadFile("d://" + "Camera" + str(self.nSelCam) +  "//" + str(self.fileindex) +".jpg")
 
     def openFile(self, _value=False):
         if not self.mayContinue():

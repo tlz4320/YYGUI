@@ -77,7 +77,7 @@ def changeDevice(mainWindow, step = 1):
     nSelCamIndex = nSelCamIndex + step
     if(nSelCamIndex < 0):
         nSelCamIndex = nSelCamIndex + n
-    nSelCamIndex = nSelCamIndex % (n + 1)
+    nSelCamIndex = nSelCamIndex % n
     obj_cam_operation = devideOpt[nSelCamIndex]
     return nSelCamIndex
 
@@ -95,4 +95,9 @@ def save_image(filename):
         devideOpt[index].Save_jpg(filename)
 
 def stopGrab():
-    obj_cam_operation.Stop_grabbing()
+    obj_cam_operation.winHandle = None
+
+def closeGrab():
+    global devideOpt
+    for obj in devideOpt:
+        obj.Stop_grabbing()

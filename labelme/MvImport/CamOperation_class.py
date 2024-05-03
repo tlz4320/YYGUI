@@ -3,7 +3,7 @@ import inspect
 import random
 import threading
 import time
-
+import os
 import cv2
 import numpy as np
 
@@ -191,21 +191,20 @@ class CameraOperation:
 
     # 停止取图
     def Stop_grabbing(self):
-        self.winHandle = None
-        # if self.b_start_grabbing and self.b_open_device:
-        #     # 退出线程
-        #     if self.b_thread_closed:
-        #         Stop_thread(self.h_thread_handle)
-        #         self.b_thread_closed = False
-        #     ret = self.obj_cam.MV_CC_StopGrabbing()
-        #     if ret != 0:
-        #         return ret
-        #     print("stop grabbing successfully!")
-        #     self.b_start_grabbing = False
-        #     self.b_exit = True
-        #     return MV_OK
-        # else:
-        #     return MV_E_CALLORDER
+        if self.b_start_grabbing and self.b_open_device:
+            # 退出线程
+            if self.b_thread_closed:
+                Stop_thread(self.h_thread_handle)
+                self.b_thread_closed = False
+            ret = self.obj_cam.MV_CC_StopGrabbing()
+            if ret != 0:
+                return ret
+            print("stop grabbing successfully!")
+            self.b_start_grabbing = False
+            self.b_exit = True
+            return MV_OK
+        else:
+            return MV_E_CALLORDER
 
     # 关闭相机
     def Close_device(self):
@@ -359,7 +358,7 @@ class CameraOperation:
         # 获取缓存锁
         self.buf_lock.acquire()
 
-        file_path = "d://" + "Camera" + self.n_connect_num + "/" + filename + ".jpg"
+        file_path = os.path.join("d://", "Camera" + str(self.n_connect_num), filename + ".jpg")
         c_file_path = file_path.encode('ascii')
         stSaveParam = MV_SAVE_IMAGE_TO_FILE_PARAM_EX()
         stSaveParam.enPixelType = self.st_frame_info.enPixelType  # ch:相机对应的像素格式 | en:Camera pixel type
