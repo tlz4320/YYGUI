@@ -47,6 +47,21 @@ def enum_devices(mainWindow):
         strError = "Enum devices fail! ret = :" + ToHexStr(ret)
         QMessageBox.warning(mainWindow, "Error", strError, QMessageBox.Ok)
     print("Find %d devices!" % deviceList.nDeviceNum)
+    devlist = list()
+    for i in range(0, deviceList.nDeviceNum):
+        mvcc_dev_info = cast(deviceList.pDeviceInfo[i], POINTER(MV_CC_DEVICE_INFO)).contents
+        strSerialNumber = ""
+        for per in mvcc_dev_info.SpecialInfo.stUsb3VInfo.chSerialNumber:
+            if per == 0:
+                break
+            strSerialNumber = strSerialNumber + chr(per)
+        print("user serial number: " + strSerialNumber)
+        devlist.append(strSerialNumber)
+
+    mainWindow._selectCameraComboBox.addItems(devlist)
+    mainWindow._selectCameraComboBox.setCurrentIndex(0)
+
+
 
 def open_device(mainWindow):
     global deviceList
@@ -81,6 +96,16 @@ def changeDevice(mainWindow, step = 1):
     obj_cam_operation = devideOpt[nSelCamIndex]
     return nSelCamIndex
 
+def changeDevice2(mainWindow, index = 1):
+    global deviceList
+    global nSelCamIndex
+    global obj_cam_operation
+    global cam
+    global devideOpt
+    stopGrab()
+    nSelCamIndex = index
+    obj_cam_operation = devideOpt[nSelCamIndex]
+    return nSelCamIndex
 
 def startGrab(mainWindow):
     obj_cam_operation.winHandle = mainWindow.canvas.winId()
@@ -99,5 +124,6 @@ def stopGrab():
 
 def closeGrab():
     global devideOpt
+    print("Start stop thread")
     for obj in devideOpt:
         obj.Stop_grabbing()

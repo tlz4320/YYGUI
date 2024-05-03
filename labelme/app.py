@@ -209,28 +209,28 @@ class MainWindow(QtWidgets.QMainWindow):
         shortcuts = self._config["shortcuts"]
         quit = action(
             self.tr("&Quit"),
-            self.closeFun,
+            self.close,
             shortcuts["quit"],
             "quit",
             self.tr("Quit application"),
         )
 
         open_ = action(
-            "Read",
+            "打开相机",
             self.openDevice,
             shortcuts["open"],
             "open",
             self.tr("Open image or label file"),
         )
         opendir = action(
-            "Take Photo",
+            "拍摄",
             self.saveCamera,
             shortcuts["open_dir"],
             "open",
             self.tr("Open Dir"),
         )
         openNextImg = action(
-            "Next Camera",
+            "下一个相机",
             self.openNextCam,
             shortcuts["open_next"],
             "next",
@@ -238,7 +238,7 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
         openPrevImg = action(
-            "Prev Camera",
+            "上一个相机",
             self.openPrevCam,
             shortcuts["open_prev"],
             "prev",
@@ -246,7 +246,7 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
         save = action(
-            self.tr("&Save\n"),
+            "保存",
             self.saveFile,
             shortcuts["save"],
             "save",
@@ -792,7 +792,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self._selectCameraComboBox = QtWidgets.QComboBox()
         cameraSelete.defaultWidget().layout().addWidget(self._selectCameraComboBox)
 
-
+        self._selectCameraComboBox.currentIndexChanged.connect(
+            lambda: self.changeCamera(
+                self._selectCameraComboBox.currentIndex()
+            )
+        )
 
         selectAiModel = QtWidgets.QWidgetAction(self)
         selectAiModel.setDefaultWidget(QtWidgets.QWidget())
@@ -1717,13 +1721,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.saveWithImageData.setChecked(enabled)
 
     def closeEvent(self, event):
+        print("Closing")
+        if self.opened:
+            closeGrab()
         if not self.mayContinue():
             event.ignore()
+
         self.settings.setValue("filename", self.filename if self.filename else "")
         self.settings.setValue("window/size", self.size())
         self.settings.setValue("window/position", self.pos())
         self.settings.setValue("window/state", self.saveState())
         self.settings.setValue("recentFiles", self.recentFiles)
+
         # ask the use for where to save the labels
         # self.settings.setValue('window/geometry', self.saveGeometry())
 
@@ -1812,22 +1821,34 @@ class MainWindow(QtWidgets.QMainWindow):
         closeGrab()
         self.close()
 
+
+
     nCams = 0
     nSelCam = 0
     fileindex = 0
+    def changeCamera(self, index):
+        if(self.opened):
+            self.nSelCam = changeDevice2(self, index)
+            if (self.grabbing):
+                startGrab(self)
+            else:
+                self.loadFile("d://" + "Camera" + str(index) + "//" + str(self.fileindex) + ".jpg")
     def openNextCam(self):
-        self.nSelCam = changeDevice(self, 1)
-        if(self.grabbing):
-            startGrab(self)
-        else:
-            self.loadFile("d://" + "Camera" + str(self.nSelCam) +  "//" + str(self.fileindex) +".jpg")
+        n = self.nCams
+        nSelCamIndex = self.nSelCam + 1
+        if (nSelCamIndex < 0):
+            nSelCamIndex = nSelCamIndex + n
+        nSelCamIndex = nSelCamIndex % n
+        self._selectCameraComboBox.setCurrentIndex(nSelCamIndex)
+
 
     def openPrevCam(self):
-        self.nSelCam = changeDevice(self, -1)
-        if(self.grabbing):
-            startGrab(self)
-        else:
-            self.loadFile("d://" + "Camera" + str(self.nSelCam) +  "//" + str(self.fileindex) +".jpg")
+        n = self.nCams
+        nSelCamIndex = self.nSelCam - 1
+        if (nSelCamIndex < 0):
+            nSelCamIndex = nSelCamIndex + n
+        nSelCamIndex = nSelCamIndex % n
+        self._selectCameraComboBox.setCurrentIndex(nSelCamIndex)
 
     grabbing = True
     def openDevice(self):
