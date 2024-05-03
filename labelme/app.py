@@ -1832,7 +1832,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if (self.grabbing):
                 startGrab(self)
             else:
-                self.loadFile("d://" + "Camera" + str(index) + "//" + str(self.fileindex) + ".jpg")
+                self.loadFile("e://" + "Camera" + str(index) + "//" + str(self.fileindex) + ".jpg")
     def openNextCam(self):
         n = self.nCams
         nSelCamIndex = self.nSelCam + 1
@@ -1852,7 +1852,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     grabbing = True
     def openDevice(self):
-        for file in glob.glob("d://Camera0//*.jpg"):
+        for file in glob.glob("e://Camera0//*.jpg"):
             file = os.path.basename(file)
             file = int(file.removesuffix(".jpg"))
             if file > self.fileindex:
@@ -1875,7 +1875,7 @@ class MainWindow(QtWidgets.QMainWindow):
             save_image(str(self.fileindex))
             stopGrab()
             self.grabbing = False
-            self.loadFile("d://" + "Camera" + str(self.nSelCam) +  "//" + str(self.fileindex) +".jpg")
+            self.loadFile("e://" + "Camera" + str(self.nSelCam) +  "//" + str(self.fileindex) +".jpg")
 
     def openFile(self, _value=False):
         if not self.mayContinue():

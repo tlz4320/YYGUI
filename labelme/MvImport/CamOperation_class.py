@@ -358,7 +358,7 @@ class CameraOperation:
         # 获取缓存锁
         self.buf_lock.acquire()
 
-        file_path = os.path.join("d://", "Camera" + str(self.n_connect_num), filename + ".jpg")
+        file_path = os.path.join("e://", "Camera" + str(self.n_connect_num), filename + ".jpg")
         c_file_path = file_path.encode('ascii')
         stSaveParam = MV_SAVE_IMAGE_TO_FILE_PARAM_EX()
         stSaveParam.enPixelType = self.st_frame_info.enPixelType  # ch:相机对应的像素格式 | en:Camera pixel type
