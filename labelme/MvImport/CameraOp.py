@@ -110,8 +110,8 @@ def changeDevice2(mainWindow, index = 1):
 def startGrab(mainWindow):
     obj_cam_operation.winHandle = mainWindow.canvas.winId()
 
-def changeParam():
-    obj_cam_operation.Set_parameter(2, 500000, 10)
+def changeParam(val):
+    obj_cam_operation.Set_parameter(2, val, 10)
 
 def save_image(filename):
     global deviceList

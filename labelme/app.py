@@ -798,6 +798,26 @@ class MainWindow(QtWidgets.QMainWindow):
             )
         )
 
+        exposeEdit = QtWidgets.QWidgetAction(self)
+        exposeEdit.setDefaultWidget(QtWidgets.QWidget())
+        exposeEdit.defaultWidget().setLayout(QtWidgets.QHBoxLayout())
+        exposeLabel = QtWidgets.QLabel("相机选择")
+        exposeLabel.setAlignment(QtCore.Qt.AlignLeft)
+        exposeEdit.defaultWidget().layout().addWidget(exposeLabel)
+
+        self._exposeInput = QtWidgets.QLineEdit()
+        exposeEdit.defaultWidget().layout().addWidget(self._exposeInput)
+
+        exposeBn = action(
+            "修改参数",
+            self.setParam,
+            shortcuts["done"],
+            icon="done",
+            tip=self.tr("Change Param"),
+            enabled=True,
+        )
+        exposeEdit.defaultWidget().layout().addWidget(exposeBn)
+
         selectAiModel = QtWidgets.QWidgetAction(self)
         selectAiModel.setDefaultWidget(QtWidgets.QWidget())
         selectAiModel.defaultWidget().setLayout(QtWidgets.QVBoxLayout())
@@ -1867,7 +1887,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.grabbing = True
 
     def setParam(self):
-        changeParam()
+        val = int(self._exposeInput.text())
+        changeParam(val)
 
     def saveCamera(self):
         if self.opened:
