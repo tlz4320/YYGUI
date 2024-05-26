@@ -800,23 +800,21 @@ class MainWindow(QtWidgets.QMainWindow):
 
         exposeEdit = QtWidgets.QWidgetAction(self)
         exposeEdit.setDefaultWidget(QtWidgets.QWidget())
-        exposeEdit.defaultWidget().setLayout(QtWidgets.QHBoxLayout())
-        exposeLabel = QtWidgets.QLabel("相机选择")
+        exposeEdit.defaultWidget().setLayout(QtWidgets.QVBoxLayout())
+        exposeLabel = QtWidgets.QLabel("曝光值")
         exposeLabel.setAlignment(QtCore.Qt.AlignLeft)
         exposeEdit.defaultWidget().layout().addWidget(exposeLabel)
 
         self._exposeInput = QtWidgets.QLineEdit()
+        self._exposeInput.setFixedWidth(100)
+        self._exposeInput.setAlignment(QtCore.Qt.AlignLeft)
         exposeEdit.defaultWidget().layout().addWidget(self._exposeInput)
 
-        exposeBn = action(
-            "修改参数",
-            self.setParam,
-            shortcuts["done"],
-            icon="done",
-            tip=self.tr("Change Param"),
-            enabled=True,
-        )
+        exposeBn = QtWidgets.QPushButton()
+        exposeBn.setText("确认")
+        exposeBn.setFixedWidth(100)
         exposeEdit.defaultWidget().layout().addWidget(exposeBn)
+        exposeBn.clicked.connect(self.setParam)
 
         selectAiModel = QtWidgets.QWidgetAction(self)
         selectAiModel.setDefaultWidget(QtWidgets.QWidget())
@@ -867,7 +865,7 @@ class MainWindow(QtWidgets.QMainWindow):
             fitWindow,
             zoom,
             None,
-            selectAiModel,
+            exposeEdit,
         )
 
         self.statusBar().showMessage(str(self.tr("%s started.")) % __appname__)
@@ -1853,6 +1851,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 startGrab(self)
             else:
                 self.loadFile("e://" + "Camera" + str(index) + "//" + str(self.fileindex) + ".jpg")
+            self._exposeInput.setText(str(getExp()))
     def openNextCam(self):
         n = self.nCams
         nSelCamIndex = self.nSelCam + 1
@@ -1877,17 +1876,19 @@ class MainWindow(QtWidgets.QMainWindow):
             file = int(file.removesuffix(".jpg"))
             if file > self.fileindex:
                 self.fileindex = file
-
         if not self.opened:
             self.nCams = open_device(self)
+            self._selectAiModelComboBox.setCurrentIndex(0)
+            self._exposeInput.setText(str(getExp()))
             #changeParam()
         self.opened = True
         self.stopAction()
         startGrab(self)
         self.grabbing = True
 
+
     def setParam(self):
-        val = int(self._exposeInput.text())
+        val = float(self._exposeInput.text())
         changeParam(val)
 
     def saveCamera(self):

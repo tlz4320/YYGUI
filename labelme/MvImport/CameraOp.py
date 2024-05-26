@@ -59,7 +59,6 @@ def enum_devices(mainWindow):
         devlist.append(strSerialNumber)
 
     mainWindow._selectCameraComboBox.addItems(devlist)
-    mainWindow._selectCameraComboBox.setCurrentIndex(0)
 
 
 
@@ -127,3 +126,7 @@ def closeGrab():
     print("Start stop thread")
     for obj in devideOpt:
         obj.Stop_grabbing()
+
+def getExp():
+    paras = obj_cam_operation.Get_parameter()
+    return obj_cam_operation.exposure_time
